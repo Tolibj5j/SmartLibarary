@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SmartLibrary: skaner demosi</title>
+<style>
+:root{--bg:#F4F6F3;--cd:#fff;--ink:#1C2421;--mu:#5B6661;--ln:#DDE3DE;--g:#17493F;--gt:#fff;--a:#E9A23B;--rd:#B3402F;--gl:#EAF3EF;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101815;--cd:#1A2420;--ink:#E8EEEA;--mu:#9DAAA3;--ln:#2C3A34;--g:#4FA58F;--gt:#0B1411;--rd:#E27A68;--gl:#20302A}}
+:root[data-theme="dark"]{--bg:#101815;--cd:#1A2420;--ink:#E8EEEA;--mu:#9DAAA3;--ln:#2C3A34;--g:#4FA58F;--gt:#0B1411;--rd:#E27A68;--gl:#20302A}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font-size:22px}
+.c{background:var(--cd);border:1px solid var(--ln);border-radius:12px;padding:14px}
+.b{min-height:44px;padding:0 16px;border:1px solid var(--ln);border-radius:8px;background:var(--cd);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.bp{background:var(--g);color:var(--gt);border-color:var(--g);font-weight:800}
+.g{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vw{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3}
+video{width:100%;height:100%;object-fit:cover;display:block}
+.fr{position:absolute;inset:25% 10%;border:3px solid var(--a);border-radius:10px;pointer-events:none}
+.mu{color:var(--mu);font-size:13px}.rs{font-size:24px;font-weight:800;word-break:break-all}
+.tg{display:inline-block;padding:1px 10px;border-radius:12px;background:var(--gl);color:var(--g);font-weight:800;font-size:12px}.er{color:var(--rd)}
+.in{min-height:44px;border:1px solid var(--ln);border-radius:8px;padding:0 10px;font:inherit;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box}
+.li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--ln)}
+</style>
+</head>
+<body>
+<main>
+<h1>Skaner demosi</h1>
+<div class="mu">Kitob orqasidagi shtrix-kodni kameraga ko‘rsating. Maqsad: sizning kitoblaringizda skaner qanchalik yaxshi ishlashini sinash.</div>
+<div class="vw"><video id="v" playsinline muted></video><div class="fr"></div></div>
+<div class="g"><button class="b bp" id="st" onclick="toggle()">Kamerani yoqish</button><label class="b" style="display:inline-flex;align-items:center">Rasmdan o‘qish<input type="file" accept="image/*" capture="environment" id="ph" hidden></label><button class="b" onclick="fail()">O‘qiy olmadi</button></div>
+<div id="ms" class="mu" role="status"></div>
+<div class="c"><div class="mu">Oxirgi natija</div><div class="rs" id="rs">—</div><div id="kd"></div></div>
+<div class="c"><label class="mu" for="isbn">Yangi kitob formasi: ISBN</label><input class="in" id="isbn" placeholder="Skanerlangan kod shu yerga tushadi"><div class="mu" style="margin-top:6px">Nom va muallifni to‘ldirish keyingi bosqichda qo‘shiladi.</div></div>
+<div class="c"><b>Sinov natijalari</b><div class="mu" id="sm">Hali skanerlanmadi</div><div id="lg"></div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let reader,run=false,last='',lastT=0,fails=0;const L=[];
+const msg=(t,e)=>{$('#ms').innerHTML=e?`<span class=er>${t}</span>`:t};
+function chk(c){if(/^\d{13}$/.test(c)){let s=0;for(let i=0;i<12;i++)s+=c[i]*(i%2?3:1);return(10-s%10)%10==c[12]}if(/^\d{9}[\dX]$/.test(c)){let s=0;for(let i=0;i<9;i++)s+=c[i]*(10-i);return(c[9]=='X'?10:+c[9])==(11-s%11)%11}return null}
+function kind(c){const v=chk(c);if(/^97[89]\d{10}$/.test(c))return v?'ISBN-13 (kitob), tekshiruv raqami to‘g‘ri':'ISBN-13 ko‘rinishida, lekin tekshiruv raqami noto‘g‘ri';if(/^\d{9}[\dX]$/.test(c)&&v)return'ISBN-10 (eski kitob)';return'Boshqa kod (inventar yorlig‘i yoki mahsulot kodi bo‘lishi mumkin)'}
+function res(t,f){const n=Date.now();if(t==last&&n-lastT<2500)return;last=t;lastT=n;L.unshift({t,f,ok:null});if(navigator.vibrate)navigator.vibrate(60);$('#rs').textContent=t;$('#kd').innerHTML=`<span class=tg>${esc(f)}</span> ${esc(kind(t))}`;if(/^[\dX]{10,13}$/.test(t))$('#isbn').value=t;msg('O‘qildi');draw()}
+function draw(){const ok=L.filter(x=>x.ok===true).length,bad=L.filter(x=>x.ok===false).length;$('#sm').textContent=`O‘qildi: ${L.length} · to‘g‘ri: ${ok} · noto‘g‘ri: ${bad} · o‘qiy olmadi: ${fails}`;$('#lg').innerHTML=L.map((x,i)=>`<div class=li><span>${esc(x.t)}<br><span class=mu>${esc(x.f)}</span></span><span class=g><button class="b ${x.ok===true?'bp':''}" onclick="L[${i}].ok=true;draw()" aria-label="To‘g‘ri">✓</button><button class="b ${x.ok===false?'bp':''}" onclick="L[${i}].ok=false;draw()" aria-label="Noto‘g‘ri">✗</button></span></div>`).join('')}
+function fail(){fails++;draw()}
+function getReader(){if(!window.ZXing){msg('Skaner kutubxonasi yuklanmadi. Internetni tekshiring.',1);return null}if(!reader){const h=new Map(),F=ZXing.BarcodeFormat;h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.CODE_128,F.CODE_39,F.QR_CODE]);h.set(ZXing.DecodeHintType.TRY_HARDER,true);reader=new ZXing.BrowserMultiFormatReader(h)}return reader}
+async function toggle(){const r=getReader();if(!r)return;if(run){r.reset();run=false;$('#st').textContent='Kamerani yoqish';return}
+try{await r.decodeFromConstraints({video:{facingMode:'environment'}},$('#v'),(x)=>{if(x)res(x.getText(),ZXing.BarcodeFormat[x.getBarcodeFormat()])});run=true;$('#st').textContent='To‘xtatish';msg('Kamera yoqildi. Shtrix-kodni ramka ichiga keltiring.')}catch(e){msg('['+e.name+'] Kameraga ruxsat berilmadi yoki kamera ochilmadi. Havolani alohida oynada oching yoki "Rasmdan o‘qish" tugmasidan foydalaning.',1)}}
+$('#ph').addEventListener('change',async e=>{const f=e.target.files[0],r=getReader();if(!f||!r)return;const u=URL.createObjectURL(f);try{const x=await r.decodeFromImageUrl(u);last='';res(x.getText(),ZXing.BarcodeFormat[x.getBarcodeFormat()])}catch(_){fails++;draw();msg('Rasmdan shtrix-kod topilmadi. Yaqinroq va yorug‘roq suratga oling.',1)}finally{URL.revokeObjectURL(u);e.target.value=''}});
+</script>
+</body>
+</html>

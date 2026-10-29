@@ -1,0 +1,18 @@
+# Python / Django
+__pycache__/
+*.pyc
+.venv/
+venv/
+db.sqlite3
+media/
+staticfiles/
+# Maxfiy sozlamalar: hech qachon repozitoriyga qo'shmang
+.env
+*.env
+secrets.*
+# Node
+node_modules/
+# Tizim fayllari
+.DS_Store
+.idea/
+.vscode/
