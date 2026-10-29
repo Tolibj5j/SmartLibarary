@@ -22,6 +22,9 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 .mu{color:var(--mu);font-size:13px}.rs{font-size:24px;font-weight:800;word-break:break-all}
 .tg{display:inline-block;padding:1px 10px;border-radius:12px;background:var(--gl);color:var(--g);font-weight:800;font-size:12px}.er{color:var(--rd)}
 .in{min-height:44px;border:1px solid var(--ln);border-radius:8px;padding:0 10px;font:inherit;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box}
+.fm{display:flex;flex-direction:column;gap:8px}.fm label{display:flex;flex-direction:column;gap:2px}
+.bk{display:flex;gap:12px;align-items:flex-start}.fl{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+#cv{width:90px;border-radius:6px;border:1px solid var(--ln);flex:none}
 .li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--ln)}
 </style>
 </head>
@@ -34,7 +37,16 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 <div class="g" id="ctl" hidden><button class="b" id="tb" onclick="torch()" hidden>🔦 Chiroq</button><label class="mu g" id="zl" hidden style="flex:1;min-width:180px">Zoom <input type="range" id="zm" style="flex:1"> <span id="zv"></span></label></div>
 <div id="ms" class="mu" role="status"></div>
 <div class="c"><div class="mu">Oxirgi natija</div><div class="rs" id="rs">—</div><div id="kd"></div></div>
-<div class="c"><label class="mu" for="isbn">Yangi kitob formasi: ISBN</label><input class="in" id="isbn" placeholder="Skanerlangan kod shu yerga tushadi"><div class="mu" style="margin-top:6px">Nom va muallifni to‘ldirish keyingi bosqichda qo‘shiladi.</div></div>
+<div class="c fm"><label class="mu" for="isbn">Yangi kitob formasi: ISBN</label><div class="g" style="flex-wrap:nowrap"><input class="in" id="isbn" inputmode="numeric" placeholder="Skanerlang yoki qo‘lda kiriting"><button class="b" onclick="lookup($('#isbn').value,1)">Qidirish</button></div>
+<div id="ls" class="mu" role="status"></div>
+<div class="bk"><img id="cv" alt="Muqova" hidden referrerpolicy="no-referrer" onerror="this.hidden=true"><div class="fl">
+<label class="mu">Nomi<input class="in" id="f_t"></label>
+<label class="mu">Muallif(lar)<input class="in" id="f_a"></label>
+<label class="mu">Nashriyot<input class="in" id="f_p"></label>
+<div class="g" style="flex-wrap:nowrap"><label class="mu" style="flex:1">Yili<input class="in" id="f_y"></label><label class="mu" style="flex:1">Sahifalar<input class="in" id="f_n" inputmode="numeric"></label><label class="mu" style="flex:1">Tili<input class="in" id="f_l"></label></div>
+</div></div>
+<label class="mu">Qisqacha tavsif<textarea class="in" id="f_d" rows="3" style="padding:8px 10px"></textarea></label>
+<div class="mu">Ma’lumotlar Google Books va Open Library bazalaridan olinadi. Topilmasa yoki xato bo‘lsa, qo‘lda to‘g‘rilang.</div></div>
 <div class="c"><b>Sinov natijalari</b><div class="mu" id="sm">Hali skanerlanmadi</div><div id="lg"></div></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
@@ -44,7 +56,34 @@ let reader,run=false,last='',lastT=0,fails=0;const L=[];
 const msg=(t,e)=>{$('#ms').innerHTML=e?`<span class=er>${t}</span>`:t};
 function chk(c){if(/^\d{13}$/.test(c)){let s=0;for(let i=0;i<12;i++)s+=c[i]*(i%2?3:1);return(10-s%10)%10==c[12]}if(/^\d{9}[\dX]$/.test(c)){let s=0;for(let i=0;i<9;i++)s+=c[i]*(10-i);return(c[9]=='X'?10:+c[9])==(11-s%11)%11}return null}
 function kind(c){const v=chk(c);if(/^97[89]\d{10}$/.test(c))return v?'ISBN-13 (kitob), tekshiruv raqami to‘g‘ri':'ISBN-13 ko‘rinishida, lekin tekshiruv raqami noto‘g‘ri';if(/^\d{9}[\dX]$/.test(c)&&v)return'ISBN-10 (eski kitob)';return'Boshqa kod (inventar yorlig‘i yoki mahsulot kodi bo‘lishi mumkin)'}
-function res(t,f){const n=Date.now();if(t==last&&n-lastT<2500)return;last=t;lastT=n;L.unshift({t,f,ok:null});if(navigator.vibrate)navigator.vibrate(60);$('#rs').textContent=t;$('#kd').innerHTML=`<span class=tg>${esc(f)}</span> ${esc(kind(t))}`;if(/^[\dX]{10,13}$/.test(t))$('#isbn').value=t;msg('O‘qildi');draw()}
+function res(t,f){const n=Date.now();if(t==last&&n-lastT<2500)return;last=t;lastT=n;L.unshift({t,f,ok:null});if(navigator.vibrate)navigator.vibrate(60);$('#rs').textContent=t;$('#kd').innerHTML=`<span class=tg>${esc(f)}</span> ${esc(kind(t))}`;if(/^[\dX]{10,13}$/.test(t)){$('#isbn').value=t;lookup(t)}msg('O‘qildi');draw()}
+// ---- ISBN bo'yicha kitob ma'lumotlarini internetdan topish ----
+const F={t:'#f_t',a:'#f_a',p:'#f_p',y:'#f_y',n:'#f_n',l:'#f_l',d:'#f_d'};
+const LANG={uz:'O‘zbek',ru:'Rus',en:'Ingliz',tr:'Turk',de:'Nemis',fr:'Fransuz',ar:'Arab',kk:'Qozoq',ky:'Qirg‘iz',tg:'Tojik'};
+const ls=(t,e)=>{$('#ls').innerHTML=e?`<span class=er>${esc(t)}</span>`:esc(t)};
+const https=u=>u?String(u).replace(/^http:/,'https:'):'';
+async function getJSON(u){const c=new AbortController(),tm=setTimeout(()=>c.abort(),8000);try{const r=await fetch(u,{signal:c.signal});if(!r.ok)throw new Error(r.status);return await r.json()}finally{clearTimeout(tm)}}
+async function fromGoogle(i){const j=await getJSON('https://www.googleapis.com/books/v1/volumes?q=isbn:'+i);const v=j.items&&j.items[0]&&j.items[0].volumeInfo;if(!v)return null;
+return{src:'Google Books',t:[v.title,v.subtitle].filter(Boolean).join(': '),a:(v.authors||[]).join(', '),p:v.publisher||'',y:(v.publishedDate||'').slice(0,4),n:v.pageCount||'',l:LANG[v.language]||v.language||'',d:v.description||'',c:https(v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))}}
+async function fromOpenLibrary(i){const j=await getJSON('https://openlibrary.org/api/books?format=json&jscmd=data&bibkeys=ISBN:'+i);const v=j['ISBN:'+i];if(!v)return null;
+const ym=String(v.publish_date||'').match(/\d{4}/);
+return{src:'Open Library',t:[v.title,v.subtitle].filter(Boolean).join(': '),a:(v.authors||[]).map(x=>x.name).join(', '),p:(v.publishers||[]).map(x=>x.name).join(', '),y:ym?ym[0]:'',n:v.number_of_pages||'',l:'',d:typeof v.notes=='string'?v.notes:'',c:https(v.cover&&(v.cover.medium||v.cover.small))}}
+let lq='';
+async function lookup(raw,force){const i=String(raw).replace(/[\s-]/g,'').toUpperCase();
+if(!/^(\d{13}|\d{9}[\dX])$/.test(i)){if(force)ls('ISBN 10 yoki 13 xonali bo‘lishi kerak.',1);return}
+if(chk(i)===false){ls('Bu ISBN’ning tekshiruv raqami noto‘g‘ri. Raqamlarni qayta tekshiring.',1);return}
+if(i==lq&&!force)return;if(i!=lq){for(const k in F)$(F[k]).value='';$('#cv').hidden=true}lq=i;ls('Internetdan qidirilmoqda…');
+let b=null;const errs=[];
+for(const f of[fromGoogle,fromOpenLibrary]){try{const x=await f(i);if(x&&x.t){b=b?mergeB(b,x):x;if(b.a&&b.p&&b.y&&b.c)break}}catch(e){errs.push(f.name)}}
+if(i!=lq)return; // shu orada boshqa ISBN kiritilgan
+if(!b){ls(errs.length==2?'Internetga ulanib bo‘lmadi. Keyinroq urinib ko‘ring yoki qo‘lda to‘ldiring.':'Bu ISBN bazalarda topilmadi. Ma’lumotlarni qo‘lda kiriting.',1);return}
+for(const k in F)$(F[k]).value=b[k]||'';
+const cv=$('#cv');if(b.c){cv.src=b.c;cv.hidden=false}else{cv.removeAttribute('src');cv.hidden=true}
+ls('Topildi: '+b.src+'. Ma’lumotlarni tekshirib chiqing.')}
+// birinchi manbada yo'q maydonlarni ikkinchisidan to'ldirish
+function mergeB(a,b){const r={...a};for(const k in b)if(!r[k]&&b[k])r[k]=b[k];if(b.src!=a.src)r.src=a.src+' + '+b.src;return r}
+let it;$('#isbn').addEventListener('input',e=>{clearTimeout(it);it=setTimeout(()=>lookup(e.target.value),600)});
+$('#isbn').addEventListener('keydown',e=>{if(e.key=='Enter')lookup(e.target.value,1)});
 function draw(){const ok=L.filter(x=>x.ok===true).length,bad=L.filter(x=>x.ok===false).length;$('#sm').textContent=`O‘qildi: ${L.length} · to‘g‘ri: ${ok} · noto‘g‘ri: ${bad} · o‘qiy olmadi: ${fails}`;$('#lg').innerHTML=L.map((x,i)=>`<div class=li><span>${esc(x.t)}<br><span class=mu>${esc(x.f)}</span></span><span class=g><button class="b ${x.ok===true?'bp':''}" onclick="L[${i}].ok=true;draw()" aria-label="To‘g‘ri">✓</button><button class="b ${x.ok===false?'bp':''}" onclick="L[${i}].ok=false;draw()" aria-label="Noto‘g‘ri">✗</button></span></div>`).join('')}
 function fail(){fails++;draw()}
 function getReader(){if(!window.ZXing){msg('Skaner kutubxonasi yuklanmadi. Internetni tekshiring.',1);return null}if(!reader){const h=new Map(),F=ZXing.BarcodeFormat;h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.CODE_128,F.CODE_39,F.QR_CODE]);h.set(ZXing.DecodeHintType.TRY_HARDER,true);reader=new ZXing.BrowserMultiFormatReader(h)}return reader}
