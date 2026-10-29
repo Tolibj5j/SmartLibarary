@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartLibrary</title>
+<style>
+:root{--bg:#E4ECE7;--cd:#fff;--ink:#1C2421;--mu:#5B6661;--ln:#DDE3DE;--g:#17493F;--gt:#fff;--a:#E9A23B}
+@media (prefers-color-scheme:dark){:root{--bg:#101815;--cd:#1A2420;--ink:#E6ECE8;--mu:#9AA6A0;--ln:#2A3631}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+header{background:var(--g);color:var(--gt);padding:48px 20px 40px;text-align:center}
+header h1{margin:0 0 8px;font-size:2.2rem}
+header p{margin:0 auto;max-width:640px;opacity:.9}
+main{max-width:900px;margin:-24px auto 40px;padding:0 16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+a.card{display:block;background:var(--cd);border:1px solid var(--ln);border-radius:14px;padding:22px;text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s}
+a.card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.card h2{margin:0 0 6px;font-size:1.2rem;color:var(--g)}
+@media (prefers-color-scheme:dark){.card h2{color:var(--a)}}
+.card p{margin:0;color:var(--mu);font-size:.95rem}
+.tag{display:inline-block;margin-bottom:10px;font-size:.75rem;font-weight:600;background:var(--a);color:#1C2421;border-radius:999px;padding:2px 10px}
+footer{text-align:center;color:var(--mu);font-size:.85rem;padding:0 16px 32px}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 SmartLibrary</h1>
+  <p>Maktab, litsey, kollej va OTM kutubxonalari uchun kitob hisobi, berish-qaytarish, qidiruv va hisobotlar tizimi.</p>
+</header>
+<main>
+  <a class="card" href="prototype/">
+    <span class="tag">Prototip</span>
+    <h2>Tizim ekranlari</h2>
+    <p>Super-admin, admin, kutubxonachi va o'quvchi ekranlari. Bosib ko'rish mumkin.</p>
+  </a>
+  <a class="card" href="demo/skaner.html">
+    <span class="tag">Demo</span>
+    <h2>Shtrix-kod skaneri</h2>
+    <p>Telefon kamerasi bilan kitob shtrix-kodini o'qish. Kameraga ruxsat bering.</p>
+  </a>
+  <a class="card" href="concept/swot_smartlibrary.png">
+    <span class="tag">Konsepsiya</span>
+    <h2>SWOT tahlili</h2>
+    <p>Loyihaning kuchli va zaif tomonlari, imkoniyatlar va xavflar.</p>
+  </a>
+</main>
+<footer>Loyiha loyihalash bosqichida. Prototipdagi barcha ma'lumotlar uydirma.</footer>
+</body>
+</html>
